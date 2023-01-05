@@ -27,6 +27,7 @@ void loadShader(const char* path, char** buffer)
 
 shaderWrapper::shaderWrapper(const char* path, unsigned int shaderType)
 {
+    shaderCanBeDeleted = true;
     char* buffer;
     loadShader(path, &buffer);
 
@@ -52,5 +53,8 @@ shaderWrapper::shaderWrapper(const char* path, unsigned int shaderType)
 
 shaderWrapper::~shaderWrapper()
 {
-    glDeleteShader(shaderID);
+    if (shaderCanBeDeleted)
+    {       
+         glDeleteShader(shaderID);
+    }
 }

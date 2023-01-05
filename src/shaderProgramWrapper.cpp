@@ -26,18 +26,23 @@ shaderProgramWrapper::shaderProgramWrapper(shaderWrapper vertexShader, shaderWra
         glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
         std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED" << infoLog << std::endl;
     }
+    //get how many attached shaders
+    int numberOfShaders;
+    glGetProgramiv(shaderProgram, GL_ATTACHED_SHADERS, &numberOfShaders);
 }
 void shaderProgramWrapper::use()
 {
     if(!programCanBeDeleted)
     {
-        std::cout << "ERROR::SHADER::PROGRAM::USE_FAILED" << std::endl;
+        std::cout << "this is not a program kekw" << std::endl;
         //throw exception
         throw std::exception(); //this is not the best way to handle this
         //todo: find a better way to handle this and learn how to use exceptions in cpp properly <3
 
         return;
     }
+    //check for ANY opengl errors and print them to the console
+
     glUseProgram(shaderProgram);
 }
 shaderProgramWrapper::~shaderProgramWrapper()
@@ -46,13 +51,6 @@ shaderProgramWrapper::~shaderProgramWrapper()
     {
         glDeleteProgram(shaderProgram);
         //check if the program was deleted
-        int success;
-        char infoLog[512];
-        glGetProgramiv(shaderProgram, GL_DELETE_STATUS, &success);
-        if(!success)
-        {
-            glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-            std::cout << "ERROR::SHADER::PROGRAM::DELETION_FAILED" << infoLog << std::endl;
-        }
+        
     }
 }

@@ -4,13 +4,8 @@
 #include <iostream>
 #include <math.h>
 
-#include "windowWrapper.h"
-#include "shaderWrapper.h"
-#include "buffersWrapper.h"
-
 #include "renderingWrapper.h"
 
-#include "transformationMatrix.h"
 
 
 int main()
@@ -31,10 +26,9 @@ int main()
         }
     }
     
-    
-
-
     renderingWrapper bigR;
+    bigR.data = eField;
+    bigR.textureUpdate();
     while (bigR.loop())
     {
     }

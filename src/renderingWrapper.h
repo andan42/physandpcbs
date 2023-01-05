@@ -9,13 +9,14 @@
 #include "buffersWrapper.h"
 
 #include "transformationMatrix.h"
+
 class renderingWrapper
 {
 private:
     windowWrapper windowW;
-    
+
     shaderProgramWrapper shaderProgramW;
-    
+    shaderProgramWrapper shaderProgramTexW;
 
     float triangleVerts[12]= {
          0.0f, -0.5f - 0.5f, -0.5f, 1.0f, // left  
@@ -32,14 +33,19 @@ private:
         0.0f, 1.0f, 0.0f, // right g
         0.0f, 0.0f, 1.0f  // top   b
     };
+    float triangleTexCoords[6] = {
+        0.0f, 0.0f, // left  
+        1.0f, 0.0f, // right 
+        0.5f, 1.0f  // top   
+    };
     unsigned int triangleIndices[3] = {
         0, 1, 2
     };
     float rectangleVerts[16] = {
-        -0.5f, -0.5f, 0.0f, 1.0f, // left  
-        0.5f, -0.5f, 0.0f, 1.0f,   // right 
-        0.5f,  0.5f, 0.0f, 1.0f,  // top left
-        -0.5f,  0.5f, 0.0f, 1.0f // top right
+        -0.5f, -0.5f, 0.0f, 1.0f, // bottom left  
+        0.5f, -0.5f, 0.0f, 1.0f,   // bottom right 
+        0.5f,  0.5f, 0.0f, 1.0f,  // top right
+        -0.5f,  0.5f, 0.0f, 1.0f // top left
     };
     float rectangleNormals[16] = {
         0.0f, 0.0f, 1.0f, 0.0, // left  
@@ -52,6 +58,12 @@ private:
         0.0f, 1.0f, 0.0f, // right g
         0.0f, 0.0f, 1.0f,  // top left b
         1.0f, 1.0f, 1.0f // top right w
+    };
+    float rectangleTexCoords[8] = {
+        0.0f, 0.0f, // bottom left  
+        1.0f, 0.0f, // bottom right 
+        1.0f,  1.0f, // top right
+        0.0f,  1.0f  // top left
     };
     unsigned int rectangleIndices[6] = {
         0, 1, 2, 0, 2, 3
@@ -134,12 +146,15 @@ private:
     buffersWrapper dummyTriBuffer;
     buffersWrapper dummyRectBuffer;
     buffersWrapper dummyCubeBuffer;
-
     buffersWrapper dummyResizingBuffer;
+    buffersWrapper dummyTexturedbuffer;
+
+    GLuint texture1;
+
 public:
     renderingWrapper();
-    //void setup();
+    float* data;
+    void textureUpdate(); //todo get rid of this
     bool loop();
-    //void cleanup();
     ~renderingWrapper();
 };

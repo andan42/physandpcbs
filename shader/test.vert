@@ -13,7 +13,6 @@ layout(location = 2) out vec4 vfColor;
 layout(location = 0) uniform float uvShine;
 layout(location = 1) uniform mat4 uvModel;
 
-
 void main()
 {
     gl_Position = uvModel * avPos;

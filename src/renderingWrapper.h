@@ -109,7 +109,12 @@ private:
         0.5f, 0.5f, 0.5f, // right gry
         0.5f, 0.5f, 0.5f  // top   gry
     };
-
+    float screenRectVerts[16] = {
+        -1.0f, -1.0f, 0.0f, 1.0f, // bottom left  
+        1.0f, -1.0f, 0.0f, 1.0f,   // bottom right 
+        1.0f,  1.0f, 0.0f, 1.0f,  // top right
+        -1.0f,  1.0f, 0.0f, 1.0f // top left
+    };
     //swap like this:
     // a, b, c, d, e, f -> c, b, a, f, e, d
     unsigned int cubeIndices[36] = {
@@ -153,7 +158,8 @@ private:
 
 public:
     renderingWrapper();
-    float* data;
+    int* fieldSideLength;
+    float* field;
     void textureUpdate(); //todo get rid of this
     bool loop();
     ~renderingWrapper();

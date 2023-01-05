@@ -28,6 +28,10 @@ class projMatrix : public matrix4x4f
 public:
     projMatrix(float fov, float aspect, float near, float far);
 };
-
+class idMatrix : public matrix4x4f
+{
+public:
+    idMatrix();
+};
 
 

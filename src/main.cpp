@@ -108,7 +108,7 @@ float laplacianPoint(int x, int y, float* field, int fieldSideLength, float samp
     return laplacian;
 }
 */
-
+#define LPL_CONST 0.001
 float laplacianPoint(int x, int y, float* field, int fieldSideLength, float samp(int, int, float*, int))
 {
     float laplacian = 0.0f;
@@ -129,7 +129,7 @@ void laplacianField(float* field, float*laplacian, int fieldSideLength, float sa
     {
         for (int x = 0; x < fieldSideLength; x++)
         {
-            laplacian[x + y * fieldSideLength] = 0.001 * laplacianPoint(x, y, field, fieldSideLength, samp);
+            laplacian[x + y * fieldSideLength] = LPL_CONST * laplacianPoint(x, y, field, fieldSideLength, samp);
         }
     }
 }
@@ -141,7 +141,7 @@ void laplacianFieldFixedBounds(float* field, float*laplacian, int fieldSideLengt
     {
         for (int x = 1; x < fieldSideLength - 1; x++)
         {
-            laplacian[x + y * fieldSideLength] = 0.001 * laplacianPoint(x, y, field, fieldSideLength, fieldSamplerFixedBoundary);
+            laplacian[x + y * fieldSideLength] = LPL_CONST * laplacianPoint(x, y, field, fieldSideLength, fieldSamplerFixedBoundary);
         }
     }
 }
@@ -154,7 +154,7 @@ void laplacianFieldFreeBounds(float* field, float*laplacian, int fieldSideLength
     {
         for (int x = 1; x < fieldSideLength - 1; x++)
         {
-            laplacian[x + y * fieldSideLength] = 0.001 * laplacianPoint(x, y, field, fieldSideLength, fieldSamplerIgnoreBoundary);
+            laplacian[x + y * fieldSideLength] = LPL_CONST * laplacianPoint(x, y, field, fieldSideLength, fieldSamplerIgnoreBoundary);
         }
     }
 
@@ -240,79 +240,43 @@ int main()
 
         addField(eField, eFieldFirstDerivative, eFieldSize);
 
-        float freq = 5.0f;
+        float freq = 0.5f;
         //oscillator sources
-        float wavegen1 = sin(timer * freq);
-        float wavegen2 = sin(timer * freq + 3.14159 / 2.0);
-        float wavegen3 = sin(timer * freq + 3.14159);
-        float wavegen4 = sin(timer * freq + 3.14159 * 3.0 / 2.0);
+        float wavegen1 = sin(timer * freq * 2 * 3.14159265359f);
 
-        float wavegentriphase1 = sin(timer * freq);
-        float wavegentriphase2 = sin(timer * freq + 3.14159 * 2.0 / 3.0);
-        float wavegentriphase3 = sin(timer * freq + 3.14159 * 4.0 / 3.0);
 
-        float pulsegen1 = (timer < 3*freq ? 1.0f : 0.0f) * wavegen1;
+        float pulsegen1 = (timer < 9*freq ? 1.0f : 0.0f) * wavegen1 * 1;
 
-        // point wave source near top side of square
-        for (int i = -4; i < 5; i++)
+        //downwards pointin reflecting parabola
+        for(int i = -25; i < 25; i++)
         {
-            for (int j = -4; j < 5; j++)
-            {
-                if(i*i + j*j <= 16)
-                {
-                    eField[(eFieldSize - 28 + j) * eFieldSize + (eFieldSize / 2) + i] = pulsegen1 * 10.0;
-                }
-            }
+            eField[50 + i + (eFieldSize - 25 - i*i / 100) * eFieldSize] = 0.0f;
+            eField[50 + i + (eFieldSize - 24 - i*i / 100) * eFieldSize] = 0.0f;
+            eField[50 + i + (eFieldSize - 23 - i*i / 100) * eFieldSize] = 0.0f;
         }
-        // parabola wall near top side of square
-        for (int i = -eFieldSize / 6; i < eFieldSize / 6; i++)
+        
+        //point source at 50, fieldsize - 50
+        eField[50 + (eFieldSize - 51) * eFieldSize] = pulsegen1 * 10.0f;
+        eField[50 + (eFieldSize - 50) * eFieldSize] = pulsegen1 * -10.0f;
+
+        //diagonal mirror at 50, 50
+        for (int i = -50; i < 50; i++)
         {
-            if(eFieldSize*50 - i*i <= 0)
-            {
-                continue;
-            }
-            eField[(eFieldSize - i * i / 50) * eFieldSize + (eFieldSize / 2) + i] = 0.0;
-            eField[(eFieldSize - i * i / 50 + 1) * eFieldSize + (eFieldSize / 2) + i] = 0.0;
-            eField[(eFieldSize - i * i / 50 + 2) * eFieldSize + (eFieldSize / 2) + i] = 0.0;
-        }
-        // triangle wave spreader below point source
-        for(int i = -14; i < 15; i++)
-        {
-            for(int j = -28; j <= -abs(i*2); j+=2)
-            {
-                eField[(eFieldSize - 28 + j - 14) * eFieldSize + (eFieldSize / 2) + i] = 0.0;
-            }
+            eField[50 + i + (50 - i) * eFieldSize] = eField[50 + i + (50 - i) * eFieldSize] * 0.5f;
+            eField[50 + i + (50 - i) * eFieldSize] = eField[50 + i + (50 - i) * eFieldSize] * 0.5f;
+            eField[50 + i + (50 - i) * eFieldSize] = eField[50 + i + (50 - i) * eFieldSize] * 0.5f;
         }
 
-        //horizontal wall at middle with 2 slits
-        for (int i = 0; i < eFieldSize; i++)
+        //leftwards pointing parabola at efieldsize -50 , 50
+
+        for (int i = -25; i < 25; i++)
         {
-            //if i is 39 - 41 or 59 - 61, leave unchanged
-            if (( abs((eFieldSize/2 - 20) - i)<=2 ) || ( abs((eFieldSize/2 + 20) - i)<=2 ))
-            {
-            }
-            else
-            {
-                //eField[(eFieldSize / 2) * eFieldSize + i] = 0.0;
-            }
+            eField[(eFieldSize - 25 - i*i / 100) + (50 + i) * eFieldSize] = 0.0f;
+            eField[(eFieldSize - 24 - i*i / 100) + (50 + i) * eFieldSize] = 0.0f;
+            eField[(eFieldSize - 23 - i*i / 100) + (50 + i) * eFieldSize] = 0.0f;
         }
-        attenuateFieldBorder(eField, eFieldFirstDerivative, 0.97f, 5, eFieldSize);
 
-        //non phase shift reflection
-        /*for (int i = 0; i < eFieldSize / 2; i++)
-        {
-            //non phase shift reflection
-            eField[(eFieldSize / 2) * eFieldSize + i ] = eField[(eFieldSize / 2 - 1) * eFieldSize + i];
-            eField[(eFieldSize / 2 + 1) * eFieldSize + i] = 0.0;
-        }
-        //phase shift reflection
-        for (int i = eFieldSize / 2; i < eFieldSize; i++)
-        {
-            //non phase shift reflection
-            eField[(eFieldSize / 2) * eFieldSize + i] = 0.0;
-        }*/
-
-
+        attenuateFieldBorder(eField, eFieldFirstDerivative, 0.99f, 5, eFieldSize);
 
         bigR.textureUpdate();
         timer += 0.01f;

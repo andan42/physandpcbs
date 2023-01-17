@@ -210,6 +210,20 @@ void attenuateFieldBorder(float* field, float* eFieldFirstDerivative, float atte
         }
     }
 }
+//make a square wave function with same period as sin
+float squareWave(float x)
+{
+    float y = sin(x);
+    if (y > 0.0f)
+    {
+        return 1.0f;
+    }
+    else
+    {
+        return -1.0f;
+    }
+}
+
 int main()
 {
     int eFieldSize = 300;
@@ -218,15 +232,40 @@ int main()
     float* eFieldFirstDerivative = new float[eFieldSize * eFieldSize];
     float* eFieldLaplacian = new float[eFieldSize * eFieldSize];
 
-    //fill it with zeros
+    float* solidObjectMask = new float[eFieldSize * eFieldSize];
+
     for (int i = 0; i < eFieldSize * eFieldSize; i++)
     {
+        //fill it with zeros
         eField[i] = 0.0f;
         eFieldFirstDerivative[i] = 0.0f;
+        //fill mask with ones
+        solidObjectMask[i] = 1.0f;
     }
+    //give a weird dipole initial condition on the top right
+    
+    //eField[(eFieldSize - 51) + (eFieldSize - 50) * eFieldSize] = 10.0f;
+    //eField[(eFieldSize - 51) + (eFieldSize - 50) * eFieldSize] = -10.0f;
+
+
+    //make a radius 5 circle around the point above
+    for (int y = eFieldSize - 55; y < eFieldSize - 45; y++)
+    {
+        for (int x = eFieldSize - 55; x < eFieldSize - 45; x++)
+        {
+            if (sqrt((x - (eFieldSize - 50)) * (x - (eFieldSize - 50)) + (y - (eFieldSize - 50)) * (y - (eFieldSize - 50))) < 5.0f)
+            {
+                //normalized distance from center
+                float distn = sqrt((x - (eFieldSize - 50)) * (x - (eFieldSize - 50)) + (y - (eFieldSize - 50)) * (y - (eFieldSize - 50)))/5.0;
+                eField[x + y * eFieldSize] = 10.0f * (cos(distn * 3.14159f / 2.0f) * cos(distn * 3.14159f / 2.0f));
+            }
+        }
+    }
+    //
 
     renderingWrapper bigR;
     bigR.field = eField;
+    bigR.mask = solidObjectMask;
     bigR.fieldSideLength = &eFieldSize;
     bigR.textureUpdate();
     //sleep 2 secs
@@ -241,39 +280,72 @@ int main()
         addField(eField, eFieldFirstDerivative, eFieldSize);
 
         float freq = 0.5f;
+        float period = 1.0f / freq;
         //oscillator sources
-        float wavegen1 = sin(timer * freq * 2 * 3.14159265359f);
+        float wavegen1 = sin(timer * freq * 2 * 3.14159265359f) + sin(timer * freq/2 * 2 * 3.14159265359f);
 
-
-        float pulsegen1 = (timer < 9*freq ? 1.0f : 0.0f) * wavegen1 * 1;
+        //is pulisng while timer < period
+        bool isPulsing = timer < period * 2.0f;
+        float pulsegen1 = (isPulsing ? 1.0f : 0.0f) * wavegen1 * 1;
 
         //downwards pointin reflecting parabola
         for(int i = -25; i < 25; i++)
         {
-            eField[50 + i + (eFieldSize - 25 - i*i / 100) * eFieldSize] = 0.0f;
-            eField[50 + i + (eFieldSize - 24 - i*i / 100) * eFieldSize] = 0.0f;
-            eField[50 + i + (eFieldSize - 23 - i*i / 100) * eFieldSize] = 0.0f;
+            //boundary conditions to reflect the wave
+            eField[50 + i + (eFieldSize - 25 - i*i / 50) * eFieldSize] = 0.0f;
+            eField[50 + i + (eFieldSize - 24 - i*i / 50) * eFieldSize] = 0.0f;
+            eField[50 + i + (eFieldSize - 23 - i*i / 50) * eFieldSize] = 0.0f;
+            //mask to display objects in black
+            solidObjectMask[50 + i + (eFieldSize - 25 - i*i / 50) * eFieldSize] = 0.0f;
+            solidObjectMask[50 + i + (eFieldSize - 24 - i*i / 50) * eFieldSize] = 0.0f;
+            solidObjectMask[50 + i + (eFieldSize - 23 - i*i / 50) * eFieldSize] = 0.0f;
         }
+
         
         //point source at 50, fieldsize - 50
-        eField[50 + (eFieldSize - 51) * eFieldSize] = pulsegen1 * 10.0f;
-        eField[50 + (eFieldSize - 50) * eFieldSize] = pulsegen1 * -10.0f;
+        if(isPulsing)
+        {
+            //eField[50 + (eFieldSize - 51) * eFieldSize] = pulsegen1 * 10.0f;
+            //eField[50 + (eFieldSize - 50) * eFieldSize] = pulsegen1 * -10.0f;
+        }
+        //point source at 50, fieldsize - 50 + 25/2 -1
+        if(isPulsing)
+        {
+            eField[50 + (eFieldSize - 51 + 25/2) * eFieldSize] = pulsegen1 * 10.0f;
+            eField[50 + (eFieldSize - 50 + 25/2) * eFieldSize] = pulsegen1 * -10.0f;
+            solidObjectMask[50 + (eFieldSize - 51 + 25/2 ) * eFieldSize] = 0.0f;
+            solidObjectMask[50 + (eFieldSize - 50 + 25/2 ) * eFieldSize] = 0.0f;
+        }
 
         //diagonal mirror at 50, 50
         for (int i = -50; i < 50; i++)
         {
-            eField[50 + i + (50 - i) * eFieldSize] = eField[50 + i + (50 - i) * eFieldSize] * 0.5f;
-            eField[50 + i + (50 - i) * eFieldSize] = eField[50 + i + (50 - i) * eFieldSize] * 0.5f;
-            eField[50 + i + (50 - i) * eFieldSize] = eField[50 + i + (50 - i) * eFieldSize] * 0.5f;
+            //boundary conditions to reflect the wave
+            float coeff = 0.0f; //this was 0.5 for some reason but i changed it back? idk maybe copilot did it? idk 
+            //how does this coeff affect the wave? i dont know
+
+            eField[50 + i + (50 - i) * eFieldSize] = eField[50 + i + (50 - i) * eFieldSize] * coeff;
+            eField[50 + i + (50 - i) * eFieldSize] = eField[50 + i + (50 - i) * eFieldSize] * coeff;
+            eField[50 + i + (50 - i) * eFieldSize] = eField[50 + i + (50 - i) * eFieldSize] * coeff;
+            //mask to display objects in black
+            solidObjectMask[50 + i + (50 - i) * eFieldSize] = 0.0f;
+            solidObjectMask[50 + i + (50 - i) * eFieldSize] = 0.0f;
+            solidObjectMask[50 + i + (50 - i) * eFieldSize] = 0.0f;
+
         }
 
         //leftwards pointing parabola at efieldsize -50 , 50
 
         for (int i = -25; i < 25; i++)
         {
+            //boundary conditions to reflect the wave
             eField[(eFieldSize - 25 - i*i / 100) + (50 + i) * eFieldSize] = 0.0f;
             eField[(eFieldSize - 24 - i*i / 100) + (50 + i) * eFieldSize] = 0.0f;
             eField[(eFieldSize - 23 - i*i / 100) + (50 + i) * eFieldSize] = 0.0f;
+            //mask to display objects in black
+            solidObjectMask[(eFieldSize - 25 - i*i / 100) + (50 + i) * eFieldSize] = 0.0f;
+            solidObjectMask[(eFieldSize - 24 - i*i / 100) + (50 + i) * eFieldSize] = 0.0f;
+            solidObjectMask[(eFieldSize - 23 - i*i / 100) + (50 + i) * eFieldSize] = 0.0f;
         }
 
         attenuateFieldBorder(eField, eFieldFirstDerivative, 0.99f, 5, eFieldSize);

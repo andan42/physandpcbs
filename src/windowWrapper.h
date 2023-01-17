@@ -8,10 +8,10 @@ void processInput(GLFWwindow *window);
 class windowWrapper
 {
 public:
-    const unsigned int SCR_WIDTH;// = 800;
-    const unsigned int SCR_HEIGHT;// = 600;
+    const unsigned int SCR_WIDTH;// = ;
+    const unsigned int SCR_HEIGHT;// = ;
     GLFWwindow* window;
-    windowWrapper(const char* title, unsigned int width = 800, unsigned int height = 600);
+    windowWrapper(const char* title, unsigned int width = 1000, unsigned int height = 1000);
     void makeCurrent();
     ~windowWrapper();
 };

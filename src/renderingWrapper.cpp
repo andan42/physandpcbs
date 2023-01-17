@@ -41,14 +41,37 @@ renderingWrapper::renderingWrapper(): windowW("Hello World")
     //perfect <3 <3 <3
 
     shaderProgramTexW.use();
-
+    //rotation uniform
     glUniformMatrix4fv(0, 1, GL_FALSE, idMatrix().getMat());
 
 
-    //shaderProgramW.use();
+    //shaderProgramW.use(); this is already in use
+
+    //generate texture texture1 (field)
+    glActiveTexture(GL_TEXTURE0);
+
     glGenTextures(1, &texture1);
     glBindTexture(GL_TEXTURE_2D, texture1);
+
+    texture1location = 1; //this is layout location = 0
+    glUniform1i(texture1location, 0); //set texture1 to texture unit 0
+
+    //set the texture wrapping/filtering options (on the currently bound texture object)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST); //perfect <3
+
     
+    //generate texture texture2 (mask)
+    glActiveTexture(GL_TEXTURE1);
+
+    glGenTextures(1, &texture2);
+    glBindTexture(GL_TEXTURE_2D, texture2);
+
+    texture2location = 2; //this is layout location = 1
+    glUniform1i(texture2location, 1); //set texture2 to texture unit 1
+
     //set the texture wrapping/filtering options (on the currently bound texture object)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -56,14 +79,21 @@ renderingWrapper::renderingWrapper(): windowW("Hello World")
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST); //perfect <3
 
 
+    //misc 
     glEnable(GL_DEPTH_TEST);
     //glEnable(GL_CULL_FACE);
 }
 
 void renderingWrapper::textureUpdate()
 {
+    glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture1);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, *fieldSideLength, *fieldSideLength, 0, GL_RED, GL_FLOAT, field); //this is the data field of this class (the eField) <33333
+
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, texture2);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, *fieldSideLength, *fieldSideLength, 0, GL_RED, GL_FLOAT, mask); //this is the data field of this class (the mask <3) <33333
+
 }
 
 bool renderingWrapper::loop()

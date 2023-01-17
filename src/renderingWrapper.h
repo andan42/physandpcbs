@@ -155,11 +155,16 @@ private:
     buffersWrapper dummyTexturedbuffer;
 
     GLuint texture1;
+    GLuint texture2;
+
+    GLuint texture1location;
+    GLuint texture2location;
 
 public:
     renderingWrapper();
     int* fieldSideLength;
     float* field;
+    float* mask;
     void textureUpdate(); //todo get rid of this
     bool loop();
     ~renderingWrapper();

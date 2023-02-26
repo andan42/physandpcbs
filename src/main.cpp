@@ -11,6 +11,7 @@
 #include "renderingWrapper.h"
 
 #include "openClInfrastructure.h"
+#include "openClKernel.h"
 
 #include <fstream>
 
@@ -21,46 +22,57 @@ int main()
     openClInfrastructure.PickGpuDevice();
     openClInfrastructure.CreateContext();
     openClInfrastructure.CreateCommandQueue();
-    std::ifstream testKernelFile("kernel/test.cl");
-    std::string testKernelString((std::istreambuf_iterator<char>(testKernelFile)), (std::istreambuf_iterator<char>()));
-    
-    cl::Program::Sources testKernelSources;
-    testKernelSources.push_back({ testKernelString.c_str(), testKernelString.length() });
 
-    cl::Program testKernelProgram(openClInfrastructure.context, testKernelSources);
-    cl_int err = testKernelProgram.build({ openClInfrastructure.device }, "-cl-std=CL2.0");
-    if (err != CL_SUCCESS)
-    {
-        std::cout << "Error building: " << testKernelProgram.getBuildInfo<CL_PROGRAM_BUILD_LOG>(openClInfrastructure.device) << std::endl;
-        return -1;
-    }
+    OpenClKernel openClKernel(openClInfrastructure.context, openClInfrastructure.device);
     
-    int buffer[1600];
-    cl::Buffer testBuffer(openClInfrastructure.context, CL_MEM_READ_WRITE, sizeof(buffer));
+    openClKernel.CreateProgramFromSourceFile("kernel/test.cl");
+    openClKernel.CreateKernel("test");
 
-    cl::Kernel testKernel(testKernelProgram, "test", &err);
-    if (err != CL_SUCCESS)
+    //create buffers
+    int bufferin[1600];
+    cl::Buffer testBufferIn(openClInfrastructure.context, CL_MEM_READ_ONLY, sizeof(bufferin));
+    //odd values are 10 and even values are 0
+    for (int i = 0; i < 1600; i += 1)
     {
-        std::cout << "Error creating kernel: " << err << std::endl;
-        return -1;
+        if (i % 2 == 0)
+        {
+            bufferin[i] = 0;
+        }
+        else
+        {
+            bufferin[i] = 10;
+        }
     }
-    testKernel.setArg(0, testBuffer);
+
+    int bufferout[1600];
+    cl::Buffer testBufferOut(openClInfrastructure.context, CL_MEM_WRITE_ONLY, sizeof(bufferout));
+
+    openClKernel.kernel.setArg(0, testBufferIn);
+    openClKernel.kernel.setArg(1, testBufferOut);
     std::cout << "Running kernel..." << std::endl;
-    //measure time elapsed
+    //start time elapsed
     auto start = std::chrono::high_resolution_clock::now();
-    openClInfrastructure.commandQueue.enqueueWriteBuffer(testBuffer, CL_TRUE, 0, sizeof(buffer), buffer);
-    openClInfrastructure.commandQueue.enqueueNDRangeKernel(testKernel, cl::NullRange, cl::NDRange(1600), cl::NullRange);
-    openClInfrastructure.commandQueue.enqueueReadBuffer(testBuffer, CL_TRUE, 0, sizeof(buffer), buffer);
+
+    //make an ndrange
+
+    //run kernel
+    openClInfrastructure.commandQueue.enqueueWriteBuffer(testBufferIn, CL_TRUE, 0, sizeof(bufferin), bufferin);
+    openClInfrastructure.commandQueue.enqueueNDRangeKernel(openClKernel.kernel, cl::NullRange, cl::NDRange(40, 40), cl::NullRange);
+    openClInfrastructure.commandQueue.enqueueReadBuffer(testBufferOut, CL_TRUE, 0, sizeof(bufferout), bufferout);
     openClInfrastructure.commandQueue.finish();
+
     //end time elapsed
     auto finish = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = finish - start;
-    //print 1 of every 100 values to reduce output size
-    for (int i = 0; i < 1600; i += 100)
+
+    //print
+    for (int i = 0; i < 1600; i += 1)
     {
-        std::cout << buffer[i] << "  ";
+
+        std::cout << bufferout[i] << " ";
     }
     std::cout << std::endl;
+
     //print time elapsed
     std::cout << "Elapsed time: " << elapsed.count() << " s " << std::endl;
     return 0;
